@@ -4,60 +4,58 @@ This is an example Hono server that demonstrates how to use the `x402-hono` midd
 
 ## Prerequisites
 
-- Node.js (v20 or higher)
-- A valid x402 facilitator (you can use the example express server at `examples/typescript/facilitator`)
+- Node.js v20+ (install via [nvm](https://github.com/nvm-sh/nvm))
+- pnpm v10 (install via [pnpm.io/installation](https://pnpm.io/installation))
 - A valid Ethereum address for receiving payments
 
 ## Setup
 
-1. First, start the local facilitator server:
+1. Copy `.env-local` to `.env` and add your Ethereum address to receive payments:
 
 ```bash
-cd ../facilitator
-# Ensure .env is setup
+cp .env-local .env
+```
+
+2. Install and build all packages from the typescript examples root:
+
+```bash
+cd ../../
 pnpm install
-pnpm dev
+pnpm build
+cd servers/hono
 ```
 
-The facilitator will run on http://localhost:3002
+3. Run the server
 
-2. Create a `.env` file in the root directory with the following variables:
-```env
-FACILITATOR_URL=http://localhost:3002
-ADDRESS=0xYourEthereumAddress
-NETWORK=base # or "base-sepolia" for testnet
-PORT=3001
-```
-
-3. In a new terminal, install and start the example server:
 ```bash
 pnpm install
 pnpm dev
 ```
-The server will run on http://localhost:3001
-
 
 ## Testing the Server
 
 You can test the server using one of the example clients:
 
 ### Using the Fetch Client
+
 ```bash
 cd ../clients/fetch
 # Ensure .env is setup
-npm install
-npm dev
+pnpm install
+pnpm dev
 ```
 
 ### Using the Axios Client
+
 ```bash
 cd ../clients/axios
 # Ensure .env is setup
-npm install
-npm dev
+pnpm install
+pnpm dev
 ```
 
 These clients will demonstrate how to:
+
 1. Make an initial request to get payment requirements
 2. Process the payment requirements
 3. Make a second request with the payment token
@@ -69,6 +67,7 @@ The server includes a single example endpoint at `/weather` that requires a paym
 ## Response Format
 
 ### Payment Required (402)
+
 ```json
 {
   "error": "X-PAYMENT header is required",
@@ -76,7 +75,7 @@ The server includes a single example endpoint at `/weather` that requires a paym
     "scheme": "exact",
     "network": "base",
     "maxAmountRequired": "1000",
-    "resource": "http://localhost:3001/weather",
+    "resource": "http://localhost:4021/weather",
     "description": "",
     "mimeType": "",
     "payTo": "0xYourAddress",
@@ -89,6 +88,7 @@ The server includes a single example endpoint at `/weather` that requires a paym
 ```
 
 ### Successful Response
+
 ```ts
 // Body
 {
@@ -105,19 +105,44 @@ The server includes a single example endpoint at `/weather` that requires a paym
 
 ## Extending the Example
 
-To add more paid endpoints, follow the pattern in the example:
+To add more paid endpoints, follow this pattern:
 
 ```typescript
-app.get(
-  "/your-endpoint",
-  paymentMiddleware("$0.10", {
-    description: "Description of your endpoint",
-    resource: `http://localhost:${process.env.PORT}/your-endpoint`,
+// First, configure the payment middleware with your routes
+app.use(
+  paymentMiddleware(payTo, {
+    // Define your routes and their payment requirements
+    "/your-endpoint": {
+      price: "$0.10",
+      network,
+    },
+    "/premium/*": {
+      price: {
+        amount: "100000",
+        asset: {
+          address: "0xabc",
+          decimals: 18,
+          eip712: {
+            name: "WETH",
+            version: "1",
+          },
+        },
+      },
+      network,
+    },
   }),
-  c => {
-    return c.json({
-      // Your endpoint response here
-    });
-  }
 );
+
+// Then define your routes as normal
+app.get("/your-endpoint", c => {
+  return c.json({
+    // Your response data
+  });
+});
+
+app.get("/premium/content", c => {
+  return c.json({
+    content: "This is premium content",
+  });
+});
 ```

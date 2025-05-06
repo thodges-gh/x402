@@ -6,6 +6,7 @@ import {
   PaymentRequirementsSelector,
   selectPaymentRequirements,
 } from "x402/client";
+import { Account } from "viem";
 
 /**
  * Enables the payment of APIs using the x402 payment protocol.
@@ -34,7 +35,7 @@ import {
  */
 export function withPaymentInterceptor(
   axiosClient: AxiosInstance,
-  walletClient: typeof evm.SignerWallet,
+  walletClient: typeof evm.SignerWallet | Account,
   paymentRequirementsSelector: PaymentRequirementsSelector = selectPaymentRequirements,
 ) {
   axiosClient.interceptors.response.use(
@@ -59,10 +60,17 @@ export function withPaymentInterceptor(
           accepts: PaymentRequirements[];
         };
         const parsed = accepts.map(x => PaymentRequirementsSchema.parse(x));
+        
+        const chainId = evm.isSignerWallet(walletClient)
+          ? walletClient.chain?.id
+          : evm.isAccount(walletClient)
+            ? walletClient.client?.chain?.id
+            : undefined;
 
         const selectedPaymentRequirements = paymentRequirementsSelector(
           parsed,
-          ChainIdToNetwork[walletClient.chain?.id],
+          chainId ? ChainIdToNetwork[chainId] : undefined,
+          "exact",
         );
         const paymentHeader = await createPaymentHeader(
           walletClient,
@@ -85,3 +93,5 @@ export function withPaymentInterceptor(
 
   return axiosClient;
 }
+
+export { decodeXPaymentResponse } from "x402/shared";

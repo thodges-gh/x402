@@ -5,11 +5,7 @@
 ```typescript
 app.use(
   // How much you want to charge, and where you want the funds to land
-  paymentMiddleware("0x209693Bc6afc0C5328bA36FaF03C514EF312287C", {
-    "/your-endpoint": {
-      price: "$0.01",
-    },
-  })
+  paymentMiddleware("0xYourAddress", {"/your-endpoint": "$0.01"})
 );
 // Thats it! See examples/typescript/servers/express.ts for a complete example. Instruction below for running on base-sepolia.
 ```
@@ -235,17 +231,13 @@ Clients and facilitator must explicitly support different `(scheme, network)` pa
 
 ## Running example
 
-1. In three separate terminals, navigate to the following directories:
-   - `examples/typescript/facilitator`
-   - `examples/typescript/servers/express`
-   - `examples/typescript/clients/axios`
+1. From `examples/typescript` run `pnpm install` and `pnpm build` to ensure all dependent packages and examples are setup.
 
-2. In each terminal:
-   - Copy the environment file: `cp .env-local .env`
-   - Fill in the required values in the `.env` file
-   - Run `pnpm dev`
+2. Select a server, i.e. express, and cd to that example. Add your servers ethereum address to get paid to into the .env file, and then run pnpm dev in that directory.
 
-3. You should see activity across all three terminals, and the client terminal will display a weather report.
+3. Select a client, i.e. axios, and cd into that example. Add your private key for the account making payments into the .env file, and then run pnpm dev in that directory.
+
+You should see activity across both terminals, and the client terminal will display a weather report.
 
 ## Running tests
 
